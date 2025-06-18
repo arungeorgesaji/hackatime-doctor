@@ -1,6 +1,5 @@
 #include "hackatime_doctor.h"
-#include <iostream>
-#include <vector>
+#include "output.h"
 
 void print_summary(const std::vector<CheckResult>& results) {
     std::cout << "\n" << COLOR_BLUE << "=== Check Summary ===\n" << COLOR_RESET;

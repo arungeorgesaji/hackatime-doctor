@@ -13,6 +13,10 @@
 struct CheckResult {
     bool success;
     std::string message;
+    std::string name;
+
+    CheckResult(bool s, const std::string& m, const std::string& n = "")
+        : success(s), message(m), name(n) {}
 };
 
 CheckResult check_git_installed();
@@ -21,6 +25,6 @@ CheckResult check_folder_structure();
 CheckResult check_api_tokens();
 void print_summary(const std::vector<CheckResult>& results);
 void suggest_debug_tips(const std::vector<CheckResult>& results);
-void run_hackatime_doctor();
+int run_hackatime_doctor(int argc, char* argv[]);
 
 #endif
