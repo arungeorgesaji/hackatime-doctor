@@ -15,8 +15,8 @@ struct CheckResult {
     std::string message;
     std::string name;
 
-    CheckResult(bool s, const std::string& m, const std::string& n = "")
-        : success(s), message(m), name(n) {}
+    CheckResult(bool s, std::string m, std::string n = "")
+    : success(s), message(std::move(m)), name(std::move(n)) {}
 };
 
 CheckResult check_git_installed();

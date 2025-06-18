@@ -1,16 +1,43 @@
 #ifndef CHECKS_H
 #define CHECKS_H
 
-#include <curl/curl.h>  
-#include <filesystem>
-#include <cstdlib>
-#include <fstream>
-#include <regex>
-#include <cstring>
-#include <sys/socket.h>
-#include <netdb.h>
-#include <unistd.h>
-#include <arpa/inet.h>
+#include <cstdlib>    
+#include <cstdio>     
+#include <cstring>    
+#include <string>     
+#include <vector>     
+#include <ctime>      
+#include <fstream>    
+#include <regex>      
+
+#if __has_include(<filesystem>)
+  #include <filesystem>
+  namespace fs = std::filesystem;
+#elif __has_include(<experimental/filesystem>)
+  #include <experimental/filesystem>
+  namespace fs = std::experimental::filesystem;
+#else
+  #error "No filesystem support!"
+#endif
+
+#if defined(_WIN32)
+    #include <winsock2.h>
+    #include <ws2tcpip.h>
+    #include <windows.h>
+    #pragma comment(lib, "ws2_32.lib")
+    #pragma comment(lib, "crypt32.lib")
+    #define close_socket closesocket
+    using socket_t = SOCKET;
+#else
+    #include <sys/socket.h>
+    #include <netdb.h>
+    #include <unistd.h>
+    #include <arpa/inet.h>
+    #define close_socket close
+    using socket_t = int;
+    #define INVALID_SOCKET -1
+#endif
+
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 

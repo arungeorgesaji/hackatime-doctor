@@ -1,0 +1,159 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+    branches:
+      - 'test-release'  
+  workflow_dispatch:
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libssl-dev build-essential pkg-config nlohmann-json3-dev
+
+    - name: Build
+      run: |
+        make BUILD_TYPE=release LDFLAGS="-static -lssl -lcrypto -static-libgcc -static-libstdc++" clean all
+    - name: Package
+      run: |
+        mkdir -p dist
+        cp bin/hackatime-doctor dist/
+        cp README.md dist/ 2>/dev/null || true
+        cp LICENSE* dist/ 2>/dev/null || true
+        cd dist
+        tar -czf hackatime-doctor-${{ github.ref_name }}-linux-x86_64.tar.gz *
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: linux-binary
+        path: dist/*.tar.gz
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          Set-ExecutionPolicy Bypass -Scope Process -Force
+          [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
+          iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+          choco install -y make mingw
+
+          git clone https://github.com/Microsoft/vcpkg.git
+          .\vcpkg\bootstrap-vcpkg.bat
+          .\vcpkg\vcpkg integrate install
+          .\vcpkg\vcpkg install nlohmann-json:x64-windows openssl:x64-windows
+          echo "VCPKG_ROOT=$pwd\vcpkg" >> $env:GITHUB_ENV
+
+      - name: Set up environment
+        run: |
+          $mingwPath = "C:\ProgramData\chocolatey\lib\mingw\tools\install\mingw64\bin"
+          $vcpkgPath = "$pwd\vcpkg\installed\x64-windows"
+          $projectPath = $pwd.Path
+          echo "PATH=$mingwPath;$env:PATH" >> $env:GITHUB_PATH
+          echo "PROJECT_ROOT=$projectPath" >> $env:GITHUB_ENV
+          echo "VCPKG_INSTALLED=$vcpkgPath" >> $env:GITHUB_ENV
+          echo "CPPFLAGS=-I$vcpkgPath\include -I$projectPath -I$projectPath\src -I$projectPath\include" >> $env:GITHUB_ENV
+          echo "LDFLAGS=-L$vcpkgPath\lib -static -lssl -lcrypto -static-libgcc -static-libstdc++" >> $env:GITHUB_ENV
+
+      - name: Verify paths
+        run: |
+          ls $env:PROJECT_ROOT
+          ls $env:PROJECT_ROOT/include
+          ls $env:PROJECT_ROOT/src
+          ls $env:VCPKG_INSTALLED/include
+          ls $env:VCPKG_INSTALLED/include/openssl
+
+      - name: Build
+        run: |
+          make BUILD_TYPE=release CXX=g++ CXXFLAGS="-std=c++17 $env:CPPFLAGS" LDFLAGS="$env:LDFLAGS" clean all
+
+      - name: Package
+        run: |
+          mkdir dist
+          copy bin\hackatime-doctor.exe dist
+          copy README.md dist 2>nul || echo "README not found"
+          copy LICENSE* dist 2>nul || echo "LICENSE not found"
+          cd dist
+          7z a hackatime-doctor-$env:GITHUB_REF_NAME-windows-x64.zip *
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-binary
+          path: dist\hackatime-doctor-*-windows-x64.zip
+
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install dependencies
+        run: |
+          brew install openssl pkg-config nlohmann-json
+          echo "OPENSSL_ROOT_DIR=$(brew --prefix openssl)" >> $GITHUB_ENV
+          echo "JSON_ROOT_DIR=$(brew --prefix nlohmann-json)" >> $GITHUB_ENV
+          
+      - name: Build
+        run: |
+          export LDFLAGS="-L$OPENSSL_ROOT_DIR/lib"
+          export CPPFLAGS="-I$OPENSSL_ROOT_DIR/include -I$JSON_ROOT_DIR/include"
+          export CXXFLAGS="-std=c++17 -stdlib=libc++ -I$OPENSSL_ROOT_DIR/include -I$JSON_ROOT_DIR/include -I$(pwd) -I$(pwd)/src -I$(pwd)/include"
+          export PKG_CONFIG_PATH="$OPENSSL_ROOT_DIR/lib/pkgconfig"
+          
+          make BUILD_TYPE=release \
+            CXXFLAGS="$CXXFLAGS" \
+            LDFLAGS="$LDFLAGS -lssl -lcrypto" \
+            clean all
+      
+      - name: Package
+        run: |
+          mkdir -p dist
+          cp bin/hackatime-doctor dist/
+          cp README.md dist/ 2>/dev/null || true
+          cp LICENSE* dist/ 2>/dev/null || true
+          cd dist
+          tar -czf hackatime-doctor-${{ github.ref_name }}-macos-x86_64.tar.gz *
+      
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-binary
+          path: dist/*.tar.gz
+
+  release:
+    needs: [build-linux, build-windows, build-macos]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')  
+    steps:
+    - name: Download artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: artifacts
+        merge-multiple: true
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v2
+      with:
+        files: artifacts/*
+        draft: false
+        prerelease: false
+        tag_name: ${{ github.ref_name }}
+        name: Release ${{ github.ref_name }}
+        body: |
+          ## hackatime-doctor ${{ github.ref_name }}
+          Download the appropriate file for your platform:
+          - **Linux**: `hackatime-doctor-${{ github.ref_name }}-linux-x86_64.tar.gz`
+          - **Windows**: `hackatime-doctor-${{ github.ref_name }}-windows-x86_64.zip`  
+          - **macOS**: `hackatime-doctor-${{ github.ref_name }}-macos-x86_64.tar.gz`
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
