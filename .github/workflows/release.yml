@@ -25,6 +25,8 @@ jobs:
       run: |
         mkdir -p dist
         cp bin/hackatime-doctor dist/
+        cp install.sh dist/ 
+        cp uninstall.sh dist/ 
         cp README.md dist/ 2>/dev/null || true
         cp LICENSE* dist/ 2>/dev/null || true
         cd dist
@@ -79,6 +81,8 @@ jobs:
         run: |
           mkdir dist
           copy bin\hackatime-doctor.exe dist
+          copy install.ps1 dist 
+          copy uninstall.ps1 dist
           copy README.md dist 2>nul || echo "README not found"
           copy LICENSE* dist 2>nul || echo "LICENSE not found"
           cd dist
@@ -117,6 +121,8 @@ jobs:
         run: |
           mkdir -p dist
           cp bin/hackatime-doctor dist/
+          cp install.sh dist/
+          cp uninstall.sh dist/
           cp README.md dist/ 2>/dev/null || true
           cp LICENSE* dist/ 2>/dev/null || true
           cd dist
