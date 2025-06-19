@@ -24,7 +24,23 @@ Download the latest release for your platform:
 1. Download the Windows release (`.zip` file)
 2. Extract the zip file to your desired location
 3. Open PowerShell in the extracted folder
-4. Run the executable directly from the extracted folder, or for global access, copy hackatime-doctor.exe to a directory in your system PATH (like C:\Program Files\HackaTime Doctor) 
+4. Choco (Chocolatey) is required for the installation. If you don't have it installed, follow these steps:
+
+   1. Open PowerShell as Administrator
+   2. Run the following command to install Chocolatey:
+
+      ```powershell
+      Set-ExecutionPolicy Bypass -Scope Process -Force
+      iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
+      ```
+
+5. Install OpenSSL if not already installed (required for HTTPS requests):
+
+   ```powershell
+   choco install openssl
+   ```
+
+6. Run the executable directly from the extracted folder, or for global access, copy hackatime-doctor.exe to a directory in your system PATH (like C:\Program Files\HackaTime Doctor) 
 
 #### Linux/macOS
 1. Download the appropriate release for your platform in your desired location
