@@ -23,12 +23,8 @@ Download the latest release for your platform:
 #### Windows
 1. Download the Windows release (`.zip` file)
 2. Extract the zip file to your desired location
-3. Open PowerShell as Administrator in the extracted folder
-4. Run the installation script:
-
-   ```powershell
-   .\install.ps1
-   ```
+3. Open PowerShell in the extracted folder
+4. Run the executable directly from the extracted folder, or for global access, copy hackatime-doctor.exe to a directory in your system PATH (like C:\Program Files\HackaTime Doctor) 
 
 #### Linux/macOS
 1. Download the appropriate release for your platform in your desired location

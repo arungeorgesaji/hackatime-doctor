@@ -21,6 +21,12 @@ jobs:
     - name: Build
       run: |
         make BUILD_TYPE=release LDFLAGS="-static -lssl -lcrypto -static-libgcc -static-libstdc++" clean all
+    
+    - name: Verify static linking
+      run: |
+        echo "Checking Linux binary dependencies:"
+        ldd bin/hackatime-doctor || echo "Fully static binary (no dynamic dependencies)"
+        
     - name: Package
       run: |
         mkdir -p dist
@@ -81,8 +87,6 @@ jobs:
         run: |
           mkdir dist
           copy bin\hackatime-doctor.exe dist
-          copy install.ps1 dist 
-          copy uninstall.ps1 dist
           copy README.md dist 2>nul || echo "README not found"
           copy LICENSE* dist 2>nul || echo "LICENSE not found"
           cd dist
@@ -99,23 +103,53 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Install dependencies
+      - name: Install build dependencies
         run: |
-          brew install openssl pkg-config nlohmann-json
-          echo "OPENSSL_ROOT_DIR=$(brew --prefix openssl)" >> $GITHUB_ENV
-          echo "JSON_ROOT_DIR=$(brew --prefix nlohmann-json)" >> $GITHUB_ENV
+          brew install pkg-config nlohmann-json
+          
+      - name: Detect architecture and build static OpenSSL
+        run: |
+          ARCH=$(uname -m)
+          echo "Building for architecture: $ARCH"
+          
+          curl -L https://www.openssl.org/source/openssl-3.0.12.tar.gz -o openssl-3.0.12.tar.gz
+          tar -xzf openssl-3.0.12.tar.gz
+          cd openssl-3.0.12
+          
+          if [ "$ARCH" = "arm64" ]; then
+            echo "Configuring for ARM64 (Apple Silicon)"
+            ./Configure darwin64-arm64-cc no-shared no-dso no-pic --prefix=$PWD/static-install
+          else
+            echo "Configuring for x86_64 (Intel)"
+            ./Configure darwin64-x86_64-cc no-shared no-dso no-pic --prefix=$PWD/static-install
+          fi
+          
+          make -j$(sysctl -n hw.ncpu)
+          make install
+          
+          echo "OPENSSL_STATIC_DIR=$PWD/static-install" >> $GITHUB_ENV
+          echo "MACOS_ARCH=$ARCH" >> $GITHUB_ENV
           
       - name: Build
         run: |
-          export LDFLAGS="-L$OPENSSL_ROOT_DIR/lib"
-          export CPPFLAGS="-I$OPENSSL_ROOT_DIR/include -I$JSON_ROOT_DIR/include"
-          export CXXFLAGS="-std=c++17 -stdlib=libc++ -I$OPENSSL_ROOT_DIR/include -I$JSON_ROOT_DIR/include -I$(pwd) -I$(pwd)/src -I$(pwd)/include"
-          export PKG_CONFIG_PATH="$OPENSSL_ROOT_DIR/lib/pkgconfig"
+          export OPENSSL_STATIC_DIR=$PWD/openssl-3.0.12/static-install
+          export JSON_ROOT_DIR=$(brew --prefix nlohmann-json)
+          
+          export CXXFLAGS="-std=c++17 -stdlib=libc++ -I$OPENSSL_STATIC_DIR/include -I$JSON_ROOT_DIR/include -I$(pwd) -I$(pwd)/src -I$(pwd)/include"
+          export LDFLAGS="$OPENSSL_STATIC_DIR/lib/libssl.a $OPENSSL_STATIC_DIR/lib/libcrypto.a -framework Security -framework CoreFoundation"
           
           make BUILD_TYPE=release \
             CXXFLAGS="$CXXFLAGS" \
-            LDFLAGS="$LDFLAGS -lssl -lcrypto" \
+            LDFLAGS="$LDFLAGS" \
             clean all
+      
+      - name: Verify static linking
+        run: |
+          echo "Checking macOS binary dependencies:"
+          otool -L bin/hackatime-doctor
+          echo ""
+          echo "Checking for OpenSSL symbols in binary:"
+          nm bin/hackatime-doctor | grep -i ssl | head -5 || echo "OpenSSL statically linked"
       
       - name: Package
         run: |
@@ -126,7 +160,12 @@ jobs:
           cp README.md dist/ 2>/dev/null || true
           cp LICENSE* dist/ 2>/dev/null || true
           cd dist
-          tar -czf hackatime-doctor-${{ github.ref_name }}-macos-x86_64.tar.gz *
+          
+          if [ "$MACOS_ARCH" = "arm64" ]; then
+            tar -czf hackatime-doctor-${{ github.ref_name }}-macos-arm64.tar.gz *
+          else
+            tar -czf hackatime-doctor-${{ github.ref_name }}-macos-x86_64.tar.gz *
+          fi
       
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -160,6 +199,9 @@ jobs:
           Download the appropriate file for your platform:
           - **Linux**: `hackatime-doctor-${{ github.ref_name }}-linux-x86_64.tar.gz`
           - **Windows**: `hackatime-doctor-${{ github.ref_name }}-windows-x86_64.zip`  
-          - **macOS**: `hackatime-doctor-${{ github.ref_name }}-macos-x86_64.tar.gz`
+          - **macOS Intel**: `hackatime-doctor-${{ github.ref_name }}-macos-x86_64.tar.gz`
+          - **macOS Apple Silicon**: `hackatime-doctor-${{ github.ref_name }}-macos-arm64.tar.gz`
+          
+          All binaries are statically linked for maximum portability.
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
