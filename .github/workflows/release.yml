@@ -43,9 +43,6 @@ jobs:
 
       - name: Install dependencies
         run: |
-          Set-ExecutionPolicy Bypass -Scope Process -Force
-          [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
-          iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
           choco install -y make mingw
 
           git clone https://github.com/Microsoft/vcpkg.git
@@ -63,7 +60,7 @@ jobs:
           echo "PROJECT_ROOT=$projectPath" >> $env:GITHUB_ENV
           echo "VCPKG_INSTALLED=$vcpkgPath" >> $env:GITHUB_ENV
           echo "CPPFLAGS=-I$vcpkgPath\include -I$projectPath -I$projectPath\src -I$projectPath\include" >> $env:GITHUB_ENV
-          echo "LDFLAGS=-L$vcpkgPath\lib -static -lssl -lcrypto -static-libgcc -static-libstdc++" >> $env:GITHUB_ENV
+          echo "LDFLAGS=-L$vcpkgPath\lib -static -llibssl -llibcrypto -lws2_32 -lcrypt32 -static-libgcc -static-libstdc++" >> $env:GITHUB_ENV
 
       - name: Verify paths
         run: |
@@ -72,6 +69,7 @@ jobs:
           ls $env:PROJECT_ROOT/src
           ls $env:VCPKG_INSTALLED/include
           ls $env:VCPKG_INSTALLED/include/openssl
+          ls $env:VCPKG_INSTALLED/lib
 
       - name: Build
         run: |

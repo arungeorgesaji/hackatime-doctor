@@ -113,7 +113,7 @@ CheckResult check_api_tokens() {
 
     hostent* server = gethostbyname(host.c_str());
     if (!server) {
-        close(sock);
+        close_socket(sock);
         if (ctx) SSL_CTX_free(ctx);
         return CheckResult{false, "Host resolution failed", "api_connection_check"};
     }
@@ -124,7 +124,7 @@ CheckResult check_api_tokens() {
     memcpy(&serv_addr.sin_addr.s_addr, server->h_addr, server->h_length);
 
     if (connect(sock, (sockaddr*)&serv_addr, sizeof(serv_addr)) < 0) {
-        close(sock);
+        close_socket(sock);
         if (ctx) SSL_CTX_free(ctx);
         return CheckResult{false, "Connection failed", "api_connection_check"};
     }
@@ -134,7 +134,7 @@ CheckResult check_api_tokens() {
         SSL_set_fd(ssl, sock);
         if (SSL_connect(ssl) != 1) {
             SSL_free(ssl);
-            close(sock);
+            close_socket(sock);
             SSL_CTX_free(ctx);
             return CheckResult{false, "SSL handshake failed" , "api_connection_check"};
         }
@@ -164,7 +164,7 @@ CheckResult check_api_tokens() {
 
     if (bytes_sent <= 0) {
         if (ssl) SSL_free(ssl);
-        close(sock);
+        close_socket(sock);
         if (ctx) SSL_CTX_free(ctx);
         return CheckResult{false, "Failed to send heartbeat", "api_connection_check"};
     }
@@ -179,7 +179,7 @@ CheckResult check_api_tokens() {
     
     if (bytes_received <= 0) {
         if (ssl) SSL_free(ssl);
-        close(sock);
+        close_socket(sock);
         if (ctx) SSL_CTX_free(ctx);
         return CheckResult{false, "No response from server", "api_connection_check"};
     }
@@ -189,7 +189,7 @@ CheckResult check_api_tokens() {
         SSL_shutdown(ssl);
         SSL_free(ssl);
     }
-    close(sock);
+    close_socket(sock);
     if (ctx) SSL_CTX_free(ctx);
 
     std::string response(buffer);
