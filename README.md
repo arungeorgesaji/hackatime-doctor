@@ -25,21 +25,23 @@ Download the latest release for your platform:
 2. Extract the zip file to your desired location
 3. Open PowerShell as Administrator in the extracted folder
 4. Run the installation script:
+
    ```powershell
    .\install.ps1
    ```
 
 #### Linux/macOS
-1. Download the appropriate release for your platform
+1. Download the appropriate release for your platform in your desired location
 2. Extract the archive:
+
    ```bash
    tar -xzf hackatime-doctor-*.tar.gz
-   cd hackatime-doctor
    ```
 3. Run the installation script:
+
    ```bash
    chmod +x install.sh
-   ./install.sh
+   sudo ./install.sh
    ```
 
 ### Build from Source
