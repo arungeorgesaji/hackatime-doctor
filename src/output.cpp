@@ -50,10 +50,10 @@ void suggest_debug_tips(const std::vector<CheckResult>& results) {
 
     for (const auto& result : results) {
         if (!result.success) {
-            if (result.message.find("Git") != std::string::npos) needs_git_help = true;
-            if (result.message.find("Node") != std::string::npos) needs_node_help = true;
-            if (result.message.find("folder") != std::string::npos) needs_folder_help = true;
-            if (result.message.find("API") != std::string::npos) needs_token_help = true;
+            if result.name == "git_check" needs_git_help = true;
+            if result.name == "nodejs_check" needs_node_help = true;
+            if result.name == "folder_structure_check" needs_folder_help = true;
+            if result.name == "api_connection_check" needs_token_help = true;
         }
     }
 

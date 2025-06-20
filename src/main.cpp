@@ -55,6 +55,7 @@ int run_hackatime_doctor(int argc, char* argv[]) {
 
     bool export_json = false;
     bool export_csv = false;
+    bool full_check = false;
     std::string output_file;
     std::vector<std::string> unknown_args;
 
@@ -72,6 +73,9 @@ int run_hackatime_doctor(int argc, char* argv[]) {
             if (i+1 < argc && argv[i+1][0] != '-') {
                 output_file = argv[++i];
             }
+        }
+        else if (arg == "--full-check") {
+            full_check = true;
         }
         else if (arg == "--help" || arg == "-h") {
             print_help();
@@ -94,10 +98,13 @@ int run_hackatime_doctor(int argc, char* argv[]) {
     
     std::vector<CheckResult> results = {
         check_git_installed(),
-        check_node_installed(),
-        check_folder_structure(),
         check_api_tokens()
     };
+
+    if (full_check) {
+        check_node_installed(),
+        check_folder_structure(),
+    }
 
     try {
         if (export_json) {
