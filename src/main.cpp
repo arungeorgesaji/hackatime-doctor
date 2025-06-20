@@ -7,6 +7,7 @@ void print_help() {
         "Usage:\n"
         "  hackatime-doctor [options]\n\n"
         "Options:\n"
+        "  --full-check         Performs extended environment checks\n"
         "  -j, --json [file]    Export results as JSON\n"
         "  -c, --csv  [file]    Export results as CSV\n"
         "  -h, --help           Show this help message\n";

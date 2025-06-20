@@ -30,14 +30,25 @@ Download the latest release for your platform:
    2. Run the following command to install Chocolatey:
 
       ```powershell
-      Set-ExecutionPolicy Bypass -Scope Process -Force
       iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
       ```
 
-5. Install OpenSSL if not already installed (required for HTTPS requests):
+5. Install OpenSSL if not already installed (required for HTTPS requests), follow these steps:
+
+    1. Open PowerShell as Administrator
+    2. Run the following command to install OpenSSL:
+
+       ```powershell
+       choco install openssl
+       ```
+6. Set console encoding to UTF-8 (recommended for proper output display in powershell):
 
    ```powershell
-   choco install openssl
+   # Temporary (for current session only):
+   [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+
+   # Permanent (add to PowerShell profile):
+   Add-Content -Path $PROFILE -Value "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8"
    ```
 
 6. Run the executable directly from the extracted folder, or for global access, copy hackatime-doctor.exe to a directory in your system PATH (like C:\Program Files\HackaTime Doctor) 
