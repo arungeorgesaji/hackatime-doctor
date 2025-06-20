@@ -9,9 +9,15 @@
 #include <ctime>      
 #include <fstream>    
 #include <regex>      
-#include <wordexp.h> 
 #include <sstream>
 #include <iostream>
+
+#ifdef _WIN32
+    #include <windows.h>
+    #include <shlobj.h>
+#else
+    #include <wordexp.h>
+#endif
 
 #if __has_include(<filesystem>)
   #include <filesystem>

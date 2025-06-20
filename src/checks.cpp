@@ -288,6 +288,52 @@ CheckResult check_api_tokens() {
     return CheckResult{false, "API request failed: " + response.substr(0, response.find("\r\n\r\n")), "api_connection_check"};
 }
 
+#ifdef _WIN32
+std::string expandWindowsPath(const std::string& path_template) {
+    std::string result = path_template;
+    
+    if (result.front() == '~') {
+        char homeDir[MAX_PATH];
+        if (SUCCEEDED(SHGetFolderPathA(NULL, CSIDL_PROFILE, NULL, 0, homeDir))) {
+            result = std::string(homeDir) + result.substr(1);
+        }
+    }
+    
+    size_t start = 0;
+    while ((start = result.find('%', start)) != std::string::npos) {
+        size_t end = result.find('%', start + 1);
+        if (end != std::string::npos) {
+            std::string varName = result.substr(start + 1, end - start - 1);
+            char varValue[MAX_PATH];
+            DWORD varLen = GetEnvironmentVariableA(varName.c_str(), varValue, MAX_PATH);
+            if (varLen > 0 && varLen < MAX_PATH) {
+                result.replace(start, end - start + 1, varValue);
+                start += varLen;
+            } else {
+                start = end + 1;
+            }
+        } else {
+            break;
+        }
+    }
+    
+    return result;
+}
+#else
+std::string expandPosixPath(const std::string& path_template) {
+    wordexp_t expanded;
+    if (wordexp(path_template.c_str(), &expanded, WRDE_NOCMD) == 0) {
+        if (expanded.we_wordc > 0) {
+            std::string result = expanded.we_wordv[0];
+            wordfree(&expanded);
+            return result;
+        }
+        wordfree(&expanded);
+    }
+    return path_template; 
+}
+#endif
+
 CheckResult check_wakatime_config() {
     std::vector<std::string> search_paths = {
         "${WAKATIME_HOME}/.wakatime.cfg",
@@ -299,27 +345,26 @@ CheckResult check_wakatime_config() {
 
     std::string config_path;
     std::string config_content;
-    
+
     for (const auto& path_template : search_paths) {
-        wordexp_t expanded;
-        if (wordexp(path_template.c_str(), &expanded, WRDE_NOCMD) == 0) {
-            if (expanded.we_wordc > 0) {
-                std::string path = expanded.we_wordv[0];
-                std::ifstream file(path);
-                if (file.is_open()) {
-                    config_path = path;
-                    config_content.assign((std::istreambuf_iterator<char>(file)), 
-                                     std::istreambuf_iterator<char>());
-                    file.close();
-                    if (config_content.find("[settings]") != std::string::npos) {
-                        wordfree(&expanded);
-                        break;
-                    }
-                }
+        #ifdef _WIN32
+            std::string path = expandWindowsPath(path_template);
+        #else
+            std::string path = expandPosixPath(path_template);
+        #endif
+    
+        std::ifstream file(path);
+        if (file.is_open()) {
+            config_path = path;
+            config_content.assign((std::istreambuf_iterator<char>(file)), 
+                             std::istreambuf_iterator<char>());
+            file.close();
+            if (config_content.find("[settings]") != std::string::npos) {
+                break;
             }
-            wordfree(&expanded);
         }
     }
+
 
     if (config_path.empty()) {
         std::cout << "No WakaTime config found. Would you like to create one? [Y/n] ";
