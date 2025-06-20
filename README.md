@@ -19,9 +19,12 @@ A diagnostic tool that verifies your development environment meets all requireme
   - Windows: Chocolatey (`choco`)
   - macOS: Homebrew (`brew`)
   - Linux:
-    - Debian/Ubuntu (`apt`)
-    - Fedora (`dnf`)
-    - Arch (`pacman`)
+    - APT (Debian/Ubuntu)
+    - DNF/YUM (RHEL/Fedora)
+    - Pacman (Arch)
+    - Zypper (openSUSE)
+    - APK (Alpine)
+    - And many other package systems
 - ⚙️ Interactive WakaTime config setup
 - 🔐 Secure API key handling
 

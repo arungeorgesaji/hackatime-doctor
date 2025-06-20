@@ -12,13 +12,6 @@
 #include <sstream>
 #include <iostream>
 
-#ifdef _WIN32
-    #include <windows.h>
-    #include <shlobj.h>
-#else
-    #include <wordexp.h>
-#endif
-
 #if __has_include(<filesystem>)
   #include <filesystem>
   namespace fs = std::filesystem;
@@ -33,11 +26,13 @@
     #include <winsock2.h>
     #include <ws2tcpip.h>
     #include <windows.h>
+    #include <shlobj.h>
     #pragma comment(lib, "ws2_32.lib")
     #pragma comment(lib, "crypt32.lib")
     #define close_socket closesocket
     using socket_t = SOCKET;
 #else
+    #include <wordexp.h>
     #include <sys/socket.h>
     #include <netdb.h>
     #include <unistd.h>

@@ -7,7 +7,7 @@ bool try_install_package(const std::string& package_name) {
     #ifdef _WIN32
         const std::string CHOCO_INSTALL_CMD = "@\"%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe\" -NoProfile -InputFormat None -ExecutionPolicy Bypass -Command \"[System.Net.ServicePointManager]::SecurityProtocol = 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))\" && SET \"PATH=%PATH%;%ALLUSERSPROFILE%\\chocolatey\\bin\"";
         
-        if (system(("where choco >nul 2>nul").c_str()) != 0) {
+        if (system(("where choco > temp.txt")) != 0) {
             std::cout << "Chocolatey package manager is required but not found.\n";
             std::cout << "Would you like to install Chocolatey now? [Y/n]: ";
             std::string response;
@@ -36,7 +36,7 @@ bool try_install_package(const std::string& package_name) {
     #elif __APPLE__
         const std::string BREW_INSTALL_CMD = "/bin/bash -c \"$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\"";
         
-        if (system("which brew >/dev/null 2>&1") != 0) {
+        if (system("which brew > temp.txt") != 0) {
             std::cout << "Homebrew package manager is required but not found.\n";
             std::cout << "Would you like to install Homebrew now? [Y/n]: ";
             std::string response;
