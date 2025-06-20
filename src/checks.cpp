@@ -4,12 +4,81 @@
 namespace fs = std::filesystem;
 
 bool try_install_package(const std::string& package_name) {
+    #ifdef _WIN32
+        const std::string CHOCO_INSTALL_CMD = "@\"%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe\" -NoProfile -InputFormat None -ExecutionPolicy Bypass -Command \"[System.Net.ServicePointManager]::SecurityProtocol = 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))\" && SET \"PATH=%PATH%;%ALLUSERSPROFILE%\\chocolatey\\bin\"";
+        
+        if (system(("where choco >nul 2>nul").c_str()) != 0) {
+            std::cout << "Chocolatey package manager is required but not found.\n";
+            std::cout << "Would you like to install Chocolatey now? [Y/n]: ";
+            std::string response;
+            std::getline(std::cin, response);
+            
+            if (response.empty() || tolower(response[0]) == 'y') {
+                std::cout << "Installing Chocolatey (Admin privileges required)...\n";
+                int result = system(CHOCO_INSTALL_CMD.c_str());
+                if (result != 0) {
+                    std::cerr << "Failed to install Chocolatey.\n";
+                    return false;
+                }
+            } else {
+                std::cout << "Skipping Chocolatey installation.\n";
+                return false;
+            }
+        }
+
+        std::cout << "Attempting to install " << package_name << " using choco...\n";
+        std::string cmd = "choco install -y " + package_name;
+        if (system(cmd.c_str()) == 0) {
+            return true;
+        }
+        return false;
+
+    #elif __APPLE__
+        const std::string BREW_INSTALL_CMD = "/bin/bash -c \"$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\"";
+        
+        if (system("which brew >/dev/null 2>&1") != 0) {
+            std::cout << "Homebrew package manager is required but not found.\n";
+            std::cout << "Would you like to install Homebrew now? [Y/n]: ";
+            std::string response;
+            std::getline(std::cin, response);
+            
+            if (response.empty() || tolower(response[0]) == 'y') {
+                std::cout << "Installing Homebrew...\n";
+                int result = system(BREW_INSTALL_CMD.c_str());
+                if (result != 0) {
+                    std::cerr << "Failed to install Homebrew.\n";
+                    return false;
+                }
+                
+                system("eval \"$(/opt/homebrew/bin/brew shellenv)\"");
+            } else {
+                std::cout << "Skipping Homebrew installation.\n";
+                return false;
+            }
+        }
+
+        std::cout << "Attempting to install " << package_name << " using brew...\n";
+        std::string cmd = "brew install " + package_name;
+        if (system(cmd.c_str()) == 0) {
+            return true;
+        }
+        return false;
+    #endif
+
     std::vector<std::pair<std::string, std::string>> package_managers = {
-        {"choco", "choco install -y " + package_name},
-        {"brew", "brew install " + package_name},
         {"pacman", "sudo pacman -S --noconfirm " + package_name},
         {"apt", "sudo apt-get install -y " + package_name},
-        {"dnf", "sudo dnf install -y " + package_name}
+        {"dnf", "sudo dnf install -y " + package_name},
+        {"aptitude", "sudo aptitude install -y " + package_name},
+        {"yum", "sudo yum install -y " + package_name},
+        {"zypper", "sudo zypper --non-interactive install " + package_name},
+        {"apk", "sudo apk add " + package_name},
+        {"emerge", "sudo emerge --ask n " + package_name},
+        {"xbps-install", "sudo xbps-install -y " + package_name},
+        {"eopkg", "sudo eopkg install -y " + package_name},
+        {"nix-env", "nix-env -i " + package_name},
+        {"slackpkg", "sudo slackpkg install " + package_name},
+        {"swupd", "sudo swupd bundle-add " + package_name}
     };
 
     for (const auto& [manager, cmd] : package_managers) {
