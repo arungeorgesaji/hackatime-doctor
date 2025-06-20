@@ -85,6 +85,7 @@ Download the latest release for your platform:
    ```
 
 6. Run the executable directly from the extracted folder, or for global access, copy hackatime-doctor.exe to a directory in your system PATH (like C:\Program Files\HackaTime Doctor) 
+Note: You may need to run PowerShell as Administrator while running the script.
 
 #### Linux/macOS
 1. Download the appropriate release for your platform in your desired location

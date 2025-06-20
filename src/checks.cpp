@@ -113,6 +113,15 @@ CheckResult check_git_installed() {
     if (try_install_package("git")) {
         if (system("git --version > temp.txt") == 0) {
             return CheckResult{true, "Git was successfully installed", "git_check"};
+        } else {
+            #ifdef _WIN32
+                 return CheckResult{true, 
+                      "Git was probably installed successfully.\n"
+                      "Please RESTART YOUR TERMINAL for Git to become available.\n"
+                      "After restarting, run 'git --version' to verify.", 
+                      "git_check"
+                 };
+            #endif
         }
     }
 
@@ -139,7 +148,16 @@ CheckResult check_node_installed() {
 
         if (try_install_package("nodejs") || try_install_package("node")) {
             if (system("node --version > temp.txt") == 0) {
-                return check_node_installed(); 
+                #ifdef _WIN32
+                    return CheckResult{true, 
+                        "Node.js was probably installed successfully.\n"
+                        "Please RESTART YOUR TERMINAL for Node.js to become available.\n"
+                        "After restarting, run 'node --version' to verify.", 
+                        "nodejs_check"
+                    };
+                #else 
+                    return check_node_installed(); 
+                #endif
             }
         }
 
