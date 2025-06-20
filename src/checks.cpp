@@ -13,7 +13,7 @@ bool try_install_package(const std::string& package_name) {
     };
 
     for (const auto& [manager, cmd] : package_managers) {
-        if (system(("which " + manager + " 2>nul >nul").c_str()) == 0) {
+        if (system(("which " + manager + " > temp.txt").c_str()) == 0) {
             std::cout << "Attempting to install " << package_name 
                       << " using " << manager << "...\n";
             int result = system(cmd.c_str());
@@ -26,7 +26,7 @@ bool try_install_package(const std::string& package_name) {
 }
 
 CheckResult check_git_installed() {
-    int result = system("git --version 2>nul >nul");
+    int result = system("git --version > temp.txt");
     if (result == 0) {
         return CheckResult{true, "Git is installed", "git_check"};
     }
@@ -42,7 +42,7 @@ CheckResult check_git_installed() {
     }
 
     if (try_install_package("git")) {
-        if (system("git --version 2>nul >nul") == 0) {
+        if (system("git --version > temp.txt") == 0) {
             return CheckResult{true, "Git was successfully installed", "git_check"};
         }
     }
@@ -56,7 +56,7 @@ CheckResult check_git_installed() {
 }
 
 CheckResult check_node_installed() {
-    int result = system("node --version 2>nul >nul");
+    int result = system("node --version > temp.txt");
     if (result != 0) {
         std::cout << COLOR_YELLOW 
                   << "Node.js is not installed. Would you like to install it now? [Y/n] " 
@@ -69,7 +69,7 @@ CheckResult check_node_installed() {
         }
 
         if (try_install_package("nodejs") || try_install_package("node")) {
-            if (system("node --version 2>nul >nul") == 0) {
+            if (system("node --version > temp.txt") == 0) {
                 return check_node_installed(); 
             }
         }
