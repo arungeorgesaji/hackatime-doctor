@@ -86,6 +86,15 @@ After installation, run the diagnostic tool:
 hackatime-doctor
 ```
 
+Run extended diagnostics including project structure checks and checks for popular developer packages:
+
+```bash
+hackatime-doctor --full-check
+```
+
+> 🚧 **Beta Feature**  
+> The `--full-check` currently includes basic extended validation.  
+
 ## Output Formats
 
 Generate reports in multiple formats:

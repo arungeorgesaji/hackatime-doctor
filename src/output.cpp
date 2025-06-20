@@ -49,12 +49,12 @@ void suggest_debug_tips(const std::vector<CheckResult>& results) {
     bool needs_token_help = false;
 
     for (const auto& result : results) {
-        if (!result.success) {
-            if result.name == "git_check" needs_git_help = true;
-            if result.name == "nodejs_check" needs_node_help = true;
-            if result.name == "folder_structure_check" needs_folder_help = true;
-            if result.name == "api_connection_check" needs_token_help = true;
-        }
+      if (!result.success) {
+          if (result.name == "git_check") needs_git_help = true;
+          if (result.name == "nodejs_check") needs_node_help = true;
+          if (result.name == "folder_structure_check") needs_folder_help = true;
+          if (result.name == "api_connection_check") needs_token_help = true;
+      }
     }
 
     std::cout << COLOR_YELLOW << "💡 Targeted Debug Tips:\n" << COLOR_RESET;
@@ -63,6 +63,12 @@ void suggest_debug_tips(const std::vector<CheckResult>& results) {
         std::cout << COLOR_YELLOW << "1. Git Issues:\n"
                   << "   - Install: https://git-scm.com/downloads or if you are on linux/mac please use your respective package managers\n"
                   << "   - Verify PATH: Run 'which git'\n"
+                  << COLOR_RESET;
+    }
+
+    if (needs_token_help) {
+        std::cout << COLOR_YELLOW << "4. API Configuration Issues:\n"
+                  << "   - Follow instructions from: https://hackatime.hackclub.com/my/wakatime_setup\n"
                   << COLOR_RESET;
     }
 
@@ -79,13 +85,6 @@ void suggest_debug_tips(const std::vector<CheckResult>& results) {
                   << "   - Try: 'These files are essential for any git project please search up what these are if you havent heard of it'\n"
                   << COLOR_RESET;
     }
-
-    if (needs_token_help) {
-        std::cout << COLOR_YELLOW << "4. API Configuration Issues:\n"
-                  << "   - Follow instructions from: https://hackatime.hackclub.com/my/wakatime_setup\n"
-                  << COLOR_RESET;
-    }
-
 
     if (needs_git_help || needs_node_help || needs_folder_help || needs_token_help) {
         std::cout << COLOR_YELLOW << "\n🛠️  General Troubleshooting:\n"

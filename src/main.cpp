@@ -7,7 +7,7 @@ void print_help() {
         "Usage:\n"
         "  hackatime-doctor [options]\n\n"
         "Options:\n"
-        "  --full-check         Performs extended environment checks\n"
+        "  -f, --full-check         Performs extended environment checks\n"
         "  -j, --json [file]    Export results as JSON\n"
         "  -c, --csv  [file]    Export results as CSV\n"
         "  -h, --help           Show this help message\n";
@@ -74,7 +74,7 @@ int run_hackatime_doctor(int argc, char* argv[]) {
                 output_file = argv[++i];
             }
         }
-        else if (arg == "--full-check") {
+        else if (arg == "--full-check" || arg == "-f") {
             full_check = true;
         }
         else if (arg == "--help" || arg == "-h") {
@@ -102,8 +102,8 @@ int run_hackatime_doctor(int argc, char* argv[]) {
     };
 
     if (full_check) {
-        check_node_installed(),
-        check_folder_structure(),
+        results.push_back(check_node_installed());
+        results.push_back(check_folder_structure());
     }
 
     try {
