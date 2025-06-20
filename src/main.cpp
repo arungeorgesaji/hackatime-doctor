@@ -98,6 +98,7 @@ int run_hackatime_doctor(int argc, char* argv[]) {
     
     std::vector<CheckResult> results = {
         check_git_installed(),
+        check_wakatime_config(),
         check_api_tokens()
     };
 

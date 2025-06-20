@@ -3,19 +3,88 @@
 
 namespace fs = std::filesystem;
 
+bool try_install_package(const std::string& package_name) {
+    std::vector<std::pair<std::string, std::string>> package_managers = {
+        {"choco", "choco install -y " + package_name},
+        {"brew", "brew install " + package_name},
+        {"pacman", "sudo pacman -S --noconfirm " + package_name},
+        {"apt", "sudo apt-get install -y " + package_name},
+        {"dnf", "sudo dnf install -y " + package_name}
+    };
+
+    for (const auto& [manager, cmd] : package_managers) {
+        if (system(("which " + manager + " 2>nul >nul").c_str()) == 0) {
+            std::cout << "Attempting to install " << package_name 
+                      << " using " << manager << "...\n";
+            int result = system(cmd.c_str());
+            if (result == 0) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 CheckResult check_git_installed() {
-    int result = system("git --version > /dev/null 2>&1");
-    return CheckResult{result == 0, result == 0 ? "Git is installed" : "Git is not installed or not in PATH", "git_check"};
+    int result = system("git --version 2>nul >nul");
+    if (result == 0) {
+        return CheckResult{true, "Git is installed", "git_check"};
+    }
+
+    std::cout << COLOR_YELLOW 
+              << "Git is not installed. Would you like to install it now? [Y/n] " 
+              << COLOR_RESET;
+    std::string response;
+    std::getline(std::cin, response);
+    
+    if (!response.empty() && tolower(response[0]) == 'n') {
+        return CheckResult{false, "Git is not installed (user declined installation)", "git_check"};
+    }
+
+    if (try_install_package("git")) {
+        if (system("git --version 2>nul >nul") == 0) {
+            return CheckResult{true, "Git was successfully installed", "git_check"};
+        }
+    }
+
+    return CheckResult{false, 
+        "Failed to install Git. Please install it manually:\n"
+        "  Windows: https://git-scm.com/download/win\n"
+        "  Mac: brew install git\n"
+        "  Linux: Use your package manager (apt, dnf, pacman, etc.)",
+        "git_check"};
 }
 
 CheckResult check_node_installed() {
-    int result = system("node --version > /dev/null 2>&1");
+    int result = system("node --version 2>nul >nul");
     if (result != 0) {
-        return CheckResult{false, "Node.js is not installed or not in PATH", "nodejs_check"};
+        std::cout << COLOR_YELLOW 
+                  << "Node.js is not installed. Would you like to install it now? [Y/n] " 
+                  << COLOR_RESET;
+        std::string response;
+        std::getline(std::cin, response);
+        
+        if (!response.empty() && tolower(response[0]) == 'n') {
+            return CheckResult{false, "Node.js is not installed (user declined installation)", "nodejs_check"};
+        }
+
+        if (try_install_package("nodejs") || try_install_package("node")) {
+            if (system("node --version 2>nul >nul") == 0) {
+                return check_node_installed(); 
+            }
+        }
+
+        return CheckResult{false,
+            "Failed to install Node.js. Please install it manually:\n"
+            "  Windows: https://nodejs.org/en/download/\n"
+            "  Mac: brew install node\n"
+            "  Linux: Use your package manager (apt, dnf, pacman, etc.)\n"
+            "  Recommended: Use nvm (https://github.com/nvm-sh/nvm)",
+            "nodejs_check"};
     }
-    
+
     FILE* pipe = popen("node --version", "r");
-    if (!pipe) return CheckResult{true, "Node.js is installed (version check failed)"};
+    if (!pipe) return CheckResult{true, "Node.js is installed (version check failed)", "nodejs_check"};
     
     char buffer[128];
     std::string version;
@@ -30,7 +99,26 @@ CheckResult check_node_installed() {
         if (major_version >= 16) {
             return CheckResult{true, "Node.js v" + std::to_string(major_version) + " is installed", "nodejs_check"};
         }
-        return CheckResult{false, "Node.js version too old (v" + std::to_string(major_version) + "), need v16+", "nodejs_check"};
+        
+        std::cout << COLOR_YELLOW 
+                  << "Node.js version is too old (v" << major_version << "). Would you like to update? [Y/n] "
+                  << COLOR_RESET;
+        std::string response;
+        std::getline(std::cin, response);
+        
+        if (!response.empty() && tolower(response[0]) == 'n') {
+            return CheckResult{false, "Node.js version too old (v" + std::to_string(major_version) + "), need v16+", "nodejs_check"};
+        }
+
+        if (try_install_package("nodejs") || try_install_package("node")) {
+            return check_node_installed(); 
+        }
+
+        return CheckResult{false,
+            "Failed to update Node.js. Please update manually:\n"
+            "  Recommended: Use nvm (https://github.com/nvm-sh/nvm)\n"
+            "  Or use your system package manager",
+            "nodejs_check"};
     }
     
     return CheckResult{true, "Node.js is installed (version check inconclusive)", "nodejs_check"};
@@ -198,4 +286,152 @@ CheckResult check_api_tokens() {
     }
     
     return CheckResult{false, "API request failed: " + response.substr(0, response.find("\r\n\r\n")), "api_connection_check"};
+}
+
+CheckResult check_wakatime_config() {
+    std::vector<std::string> search_paths = {
+        "${WAKATIME_HOME}/.wakatime.cfg",
+        "${XDG_CONFIG_HOME:-$HOME/.config}/wakatime/.wakatime.cfg",
+        "$HOME/.wakatime.cfg",
+        "/etc/wakatime.cfg",
+        "/usr/local/etc/wakatime.cfg"
+    };
+
+    std::string config_path;
+    std::string config_content;
+    
+    for (const auto& path_template : search_paths) {
+        wordexp_t expanded;
+        if (wordexp(path_template.c_str(), &expanded, WRDE_NOCMD) == 0) {
+            if (expanded.we_wordc > 0) {
+                std::string path = expanded.we_wordv[0];
+                std::ifstream file(path);
+                if (file.is_open()) {
+                    config_path = path;
+                    config_content.assign((std::istreambuf_iterator<char>(file)), 
+                                     std::istreambuf_iterator<char>());
+                    file.close();
+                    if (config_content.find("[settings]") != std::string::npos) {
+                        wordfree(&expanded);
+                        break;
+                    }
+                }
+            }
+            wordfree(&expanded);
+        }
+    }
+
+    if (config_path.empty()) {
+        std::cout << "No WakaTime config found. Would you like to create one? [Y/n] ";
+        std::string response;
+        std::getline(std::cin, response);
+        
+        if (!response.empty() && tolower(response[0]) == 'n') {
+            return CheckResult{false, 
+                "WakaTime config not found and user declined to create one",
+                "wakatime_config"};
+        }
+
+        const char* home = std::getenv("HOME");
+        if (!home) home = std::getenv("USERPROFILE");
+        if (!home) {
+            return CheckResult{false,
+                "Could not determine home directory for config creation",
+                "wakatime_config"};
+        }
+
+        config_path = std::string(home) + "/.wakatime.cfg";
+        
+        const char* api_url = std::getenv("HACKATIME_API_URL");
+        const char* api_key = std::getenv("HACKATIME_API_KEY");
+        
+        if (!api_url || !api_key) {
+            return CheckResult{false,
+                "Missing HACKATIME_API_URL or HACKATIME_API_KEY environment variables",
+                "wakatime_config"};
+        }
+
+        std::ofstream config_file(config_path);
+        if (!config_file) {
+            return CheckResult{false,
+                "Failed to create config file at " + config_path,
+                "wakatime_config"};
+        }
+
+        config_file << "[settings]\n"
+                   << "api_url = " << api_url << "\n"
+                   << "api_key = " << api_key << "\n"
+                   << "heartbeat_rate_limit_seconds = 30\n";
+        
+        std::cout << "Created WakaTime config at " << config_path << "\n";
+        return CheckResult{true,
+            "Successfully created WakaTime config",
+            "wakatime_config"};
+    }
+
+    bool has_url = false;
+    bool has_key = false;
+    std::vector<std::string> issues;
+    std::string current_section;
+
+    std::istringstream content_stream(config_content);
+    std::string line;
+    int line_num = 0;
+
+    while (std::getline(content_stream, line)) {
+        line_num++;
+        std::string trimmed = line;
+        trimmed.erase(trimmed.begin(), 
+                     std::find_if(trimmed.begin(), trimmed.end(),
+                     [](int ch) { return !std::isspace(ch); }));
+
+        if (trimmed.empty()) continue;
+
+        if (trimmed[0] == '[' && trimmed.back() == ']') {
+            current_section = trimmed.substr(1, trimmed.length() - 2);
+            continue;
+        }
+
+        if (current_section != "settings") continue;
+
+        size_t eq_pos = trimmed.find('=');
+        if (eq_pos == std::string::npos) continue;
+
+        std::string key = trimmed.substr(0, eq_pos);
+        key.erase(std::find_if(key.rbegin(), key.rend(),
+                 [](int ch) { return !std::isspace(ch); }).base(), key.end());
+
+        std::string value = trimmed.substr(eq_pos + 1);
+        value.erase(value.begin(),
+                  std::find_if(value.begin(), value.end(),
+                  [](int ch) { return !std::isspace(ch); }));
+
+        if (key == "api_url") {
+            has_url = true;
+            if (value != "https://hackatime.hackclub.com/api/hackatime/v1") {
+                issues.push_back("Incorrect API URL: " + value);
+            }
+        } else if (key == "api_key") {
+            has_key = true;
+            if (value.empty()) {
+                issues.push_back("Empty API key");
+            }
+        }
+    }
+
+    if (!has_url) issues.push_back("Missing API URL");
+    if (!has_key) issues.push_back("Missing API key");
+
+    if (issues.empty()) {
+        return CheckResult{true,
+                         "Valid WakaTime config at " + config_path,
+                         "wakatime_config"};
+    } else {
+        std::string message = "Issues in " + config_path + ":\n";
+        for (const auto& issue : issues) {
+            message += "  • " + issue + "\n";
+        }
+        message += "Please update your config or set environment variables";
+        return CheckResult{false, message, "wakatime_config"};
+    }
 }

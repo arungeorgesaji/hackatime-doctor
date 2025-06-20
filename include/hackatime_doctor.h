@@ -19,6 +19,7 @@ struct CheckResult {
     : success(s), message(std::move(m)), name(std::move(n)) {}
 };
 
+CheckResult check_wakatime_config();
 CheckResult check_git_installed();
 CheckResult check_node_installed();
 CheckResult check_folder_structure();

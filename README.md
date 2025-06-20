@@ -6,13 +6,43 @@ A diagnostic tool that verifies your development environment meets all requireme
 
 ## Features
 
-- ✅ Checks for required software (Git, Node.js)
-- 🔍 Validates project structure
-- 🔑 Tests API connectivity
-- 📊 Generates JSON/CSV reports
-- 🖥️ Cross-platform support (Linux/macOS/Windows)
+### Core Checks
+- ✅ Git installation check
+- ✅ Node.js installation & version check (v16+)
+- ✅ Project structure validation (README.md, LICENSE, .gitignore)
+- ✅ API connectivity test (HackaTime server)
+- ✅ WakaTime config validation
 
-## Installation
+### Installation & Setup
+- 🔄 Auto-install for missing packages 
+- 🔍 Multi-package manager support:
+  - Windows: Chocolatey (`choco`)
+  - macOS: Homebrew (`brew`)
+  - Linux:
+    - Debian/Ubuntu (`apt`)
+    - Fedora (`dnf`)
+    - Arch (`pacman`)
+- ⚙️ Interactive WakaTime config setup
+- 🔐 Secure API key handling
+
+### Reporting & Output
+- 📊 JSON report generation
+- 📈 CSV report generation
+- 🎨 Color-coded terminal output
+- 📋 Detailed error messages with remediation steps
+
+### Cross-Platform Support
+- 🖥️ Windows compatibility
+- 🍏 macOS compatibility
+- 🐧 Linux compatibility
+- 🔄 Automatic path resolution (WAKATIME_HOME, XDG_CONFIG_HOME, etc.)
+
+### Advanced Features
+- 📂 Multi-location config file detection:
+  - `~/.wakatime.cfg`
+  - `~/.config/wakatime/.wakatime.cfg`
+  - `/etc/wakatime.cfg`
+- 🚦 Environment variable validation
 
 ### Quick Install (Recommended)
 
