@@ -8,10 +8,12 @@ A diagnostic tool that verifies your development environment meets all requireme
 
 ### Core Checks
 - ✅ Git installation check
-- ✅ Node.js installation & version check (v16+)
-- ✅ Project structure validation (README.md, LICENSE, .gitignore)
 - ✅ API connectivity test (HackaTime server)
 - ✅ WakaTime config validation
+
+### Optional Checks
+- ✅ Project structure validation (README.md, LICENSE, .gitignore)
+- ✅ Node.js installation & version check (v16+)
 
 ### Installation & Setup
 - 🔄 Auto-install for missing packages 
