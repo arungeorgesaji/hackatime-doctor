@@ -68,9 +68,9 @@ case "$PLATFORM" in
         ;;
 esac
 
-if "$DEST_PATH" --version >/dev/null 2>&1; then
+if "$DEST_PATH" --help >/dev/null 2>&1; then
     echo "✔️  Verification:"
-    "$DEST_PATH" --version
+    "$DEST_PATH" --help
 else
     echo "⚠️  Warning: Could not verify installation"
 fi
