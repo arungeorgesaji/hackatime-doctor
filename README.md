@@ -103,6 +103,9 @@ Note: You may need to run PowerShell as Administrator while running the script.
    sudo ./install.sh
    ```
 
+Note: Some minimal linux distros may not have which installedby default, most likely you wouldnt face an issue with this
+command, but if you do, you can install it using your package manager.
+
 ### Build from Source
 
 If you prefer to compile from source:
