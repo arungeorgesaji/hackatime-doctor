@@ -2,7 +2,7 @@
 
 ![Terminal Screenshot](terminal-screenshot.png)
 
-A diagnostic tool that verifies your development environment meets all requirements for Hack Club's HackaTime.
+A diagnostic tool that verifies your development environment meets all requirements for Hack Club's HackaTime and help in its setup and fixing.
 
 ## Features
 
